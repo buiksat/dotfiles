@@ -1,0 +1,33 @@
+#!/usr/bin/env sh
+
+data=$(cat)
+
+if command -v pbcopy >/dev/null 2>&1; then
+	printf '%s' "$data" | pbcopy
+	exit 0
+fi
+
+if command -v wl-copy >/dev/null 2>&1; then
+	printf '%s' "$data" | wl-copy
+	exit 0
+fi
+
+if command -v xclip >/dev/null 2>&1; then
+	printf '%s' "$data" | xclip -selection clipboard
+	exit 0
+fi
+
+if command -v xsel >/dev/null 2>&1; then
+	printf '%s' "$data" | xsel --clipboard --input
+	exit 0
+fi
+
+if command -v base64 >/dev/null 2>&1 && [ -w /dev/tty ]; then
+	encoded=$(printf '%s' "$data" | base64 | tr -d '\n')
+	printf '\033]52;c;%s\a' "$encoded" > /dev/tty
+	exit 0
+fi
+
+tmp="${TMPDIR:-/tmp}/tmux-copy.$$"
+printf '%s' "$data" > "$tmp"
+printf 'tmux-copy: no clipboard tool found; saved selection to %s\n' "$tmp" >&2
